@@ -1,16 +1,21 @@
 const MersenneTwister = require('mersenne-twister');
+const SentenceGenerator = require('./sentence-generator');
 
 class FieldGenerator {
-    constructor(data) {
-        this.config = data.config;
-        this.seed = data.seed;
-        if (this.seed == undefined) this.seed = new Date().getTime();
+    constructor(config) {
+        this.config = config;
+        this.twister = new MersenneTwister(this.config.seed);
+        this.fields = this.generateFields();
+        this.sentenceGenerator = new SentenceGenerator();
+
         if (this.config == undefined) throw new Error('Config required');
-        this.twister = new MersenneTwister(this.seed);
-        this.fields = [];
+        //if (this.config.seed == undefined)
+        this.setRandomSeed();
     }
 
     generateFields() {
+        //Reset twister!
+        this.setSeed(this.config.seed);
         //Generate fields
         this.fields = [];
         for (var y = 0; y < this.config.rows; y++) {
@@ -74,10 +79,42 @@ class FieldGenerator {
         ].filter(f => f != null);
     }
     getFieldAt(x, y) {
-        //, wrap) {
         if (x >= 0 && x < this.config.columns && y >= 0 && y < this.config.rows)
             return this.fields[y * this.config.columns + x];
         return null;
+    }
+    resize(oldColumns, newColumns, oldRows, newRows) {
+        var _fields = [];
+        for (var y = 0; y < newRows; y++) {
+            for (var x = 0; x < newColumns; x++) {
+                var field = this.fields.filter(f => f.y == y && f.x == x)[0];
+                if (!field)
+                    field = {
+                        state: "default",
+                        isMine: false,
+                        mines: 0,
+                        x: x,
+                        y: y,
+                        idx: y * newColumns + x
+                    };
+                _fields.push(field);
+            }
+        }
+        this.fields = _fields;
+    }
+    setRandomSeed() {
+        this.setSeed(this.sentenceGenerator.getRandomSentence());
+    }
+    setSeed(seed) {
+        if (!seed)
+            seed = this.sentenceGenerator.getRandomSentence();
+        
+        this.config.seed = seed;
+        var h = 0, l = seed.length, i = 0;
+        if (l > 0)
+            while (i < l)
+                h = (h << 5) - h + seed.charCodeAt(i++) | 0;
+        this.twister.init_seed(h);
     }
 }
 

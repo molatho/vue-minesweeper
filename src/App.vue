@@ -10,7 +10,7 @@
       </b-row>
       <b-row>
         <b-col>
-          <Board ref="board" id="board" :config="this.config" :rows="this.config.rows" :columns="this.config.columns" :mineDensity="this.config.mineDensity" :stats="stats" />
+          <Board ref="board" id="board" :config="this.config" :stats="stats" />
           </b-col>
       </b-row>
       <b-row>
@@ -20,58 +20,59 @@
       </b-row>
       <b-row>
         <b-col>
+          <b-button-group>
+            <b-button
+              :disabled="this.stats.state != 'running'"
+              @click='onResetClicked'>
+              Reset</b-button>
+            <b-button
+              @click='$refs["board"].reset(true)'>
+              New Game</b-button>
+            <b-button
+              :disabled="this.stats.state != 'lost' && this.stats.state != 'won'"
+              @click='onReplayClicked'>
+              Replay</b-button>
+            <b-button size="sm" v-b-modal.settings><font-awesome-icon icon="cog"/></b-button>
+          </b-button-group>
+        </b-col>
+        <!--<b-col>
           <b-button
             v-if="this.stats.state =='running'"
             v-on:click='$refs["board"].reset()'>
           Reset</b-button>
           <b-button
-            v-if="this.stats.state == 'lost' || this.stats.state == 'won'"
-            v-on:click='$refs["board"].reset()'>
+            v-else-if="this.stats.state == 'lost' || this.stats.state == 'won'"
+            v-on:click='$refs["board"].reset(true)'>
           New Game</b-button>
         </b-col>
         <b-col>
+          <b-button
+            v-if="this.stats.state == 'lost' || this.stats.state == 'won'"
+            v-on:click='$refs["board"].reset(false)'>
+          Replay</b-button>
+        </b-col>          
+        <b-col>
           <b-button size="sm" v-b-modal.settings><font-awesome-icon icon="cog"/></b-button>
-        </b-col>
+        </b-col>-->
+      </b-row>
+      <b-row>
+        <configuration-modal :id="'settings'" :config="this.config"></configuration-modal>
       </b-row>
     </b-container>
-    <b-modal id="settings" ok-only title="Vue-Sweeper Configuration">
-      <b-container>
-        <b-row>
-          <b-col sm="5">
-            <label for="mineDensity">Mine-Density: {{ parseInt(config.mineDensity * 100) }}%</label>
-          </b-col>
-          <b-col sm="7">
-            <b-form-input id="mineDensity" v-model="config.mineDensity" type="range" min="0" max="1" step="0.01"></b-form-input>
-          </b-col>
-        </b-row>
-        <b-row>
-          <b-col sm="5">
-            <label for="columns">Dimensions:</label>
-          </b-col>
-          <b-col sm="3">
-            <b-form-input id="columns" v-model="config.columns" type="number" min="1" max="100" step="1"></b-form-input>
-          </b-col>
-          <b-col sm="1">
-            x
-          </b-col>
-          <b-col sm="3">
-            <b-form-input id="rows" v-model="config.rows" type="number" min="1" max="100" step="1"></b-form-input>
-          </b-col>
-        </b-row>
-      </b-container>
-    </b-modal>
   </div>
 </template>
 
 <script>
 import Board from "./components/Board.vue";
 import GameStats from "./components/GameStats.vue";
+import ConfigurationModal from "./components/ConfigurationModal.vue";
 
 export default {
   name: "app",
   components: {
     Board,
-    GameStats
+    GameStats,
+    ConfigurationModal
   },
   data: function() {
     return {
@@ -85,11 +86,22 @@ export default {
       config: {
         columns: 10,
         rows: 10,
-        mineDensity: 0.15
+        mineDensity: 0.15,
+        seed: 'init'
       }
     };
   },
-  mounted: function() {}
+  mounted: function() {},
+  methods: {
+    onResetClicked: function() {
+      if (this.stats.state == 'running')
+        this.$refs["board"].reset();
+    },
+    onReplayClicked: function() {
+      if (this.stats.state == 'lost' || this.stats.state == 'won')
+        this.$refs["board"].reset(false);
+    }
+  }
 };
 </script>
 
